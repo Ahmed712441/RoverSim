@@ -1,0 +1,11 @@
+version: "3.8"
+services:
+  roverdriver:
+    build: 
+      context: ./
+    restart: always
+    command: python code/drive_rover.py
+    volumes:
+      - ./code:/code
+    ports:
+      - 4567:4567
