@@ -5,8 +5,8 @@ services:
       context: ./
     restart: always
     command: python code/drive_rover.py
-    volumes:
-      - ./code:/code
+    # volumes:
+      # - ./code:/code
     ports:
       - 4567:4567
     environment:

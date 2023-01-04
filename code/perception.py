@@ -148,26 +148,32 @@ def perception_step(Rover):
                                                 Rover.pos[0], Rover.pos[1], 
                                                 Rover.yaw, Rover.worldmap.shape[0], SCALE)
 
-    distance_obstacles = np.sqrt(np.power(obstacle_x_world-Rover.pos[0] ,2)+np.power(obstacle_y_world-Rover.pos[1] ,2)).astype(np.uint8)
-    distance_navigable = np.sqrt(np.power(navigable_x_world-Rover.pos[0] ,2)+np.power(navigable_y_world-Rover.pos[1] ,2)).astype(np.uint8)
-    Rover.vote[obstacle_y_world, obstacle_x_world, 0] += (80-distance_obstacles)
-    Rover.vote[navigable_y_world, navigable_x_world, 2] += (120-distance_navigable)
-    
-    nav_pix = (Rover.vote[:,:,2] > Rover.vote[:,:,0])
-    Rover.worldmap[nav_pix,2] = 255
-    Rover.worldmap[nav_pix,0] = 0
-    Rover.worldmap[~nav_pix,0] = 255
-    Rover.worldmap[rock_y_world, rock_x_world, 1] = 255
-    # Rover.worldmap[obstacle_y_world, obstacle_x_world, 0] += 10
-    # Rover.worldmap[navigable_y_world, navigable_x_world, 2] += 15
-    # remove overlap mesurements
-    # nav_pix = Rover.worldmap[:,:,2] > 0
-    # Rover.worldmap[nav_pix, 0] = 0
-    
-    # obstacle_pix = Rover.worldmap[:,:,0] > 150
-    # Rover.worldmap[obstacle_pix, 2] = 0
-
+    if (Rover.pitch < 1 or Rover.pitch > 359) and (Rover.roll < 1 or Rover.roll > 359) and (Rover.brake <= 0):
+        distance_obstacles = np.sqrt(np.power(obstacle_x_world-Rover.pos[0] ,2)+np.power(obstacle_y_world-Rover.pos[1] ,2)).astype(np.uint8)
+        distance_navigable = np.sqrt(np.power(navigable_x_world-Rover.pos[0] ,2)+np.power(navigable_y_world-Rover.pos[1] ,2)).astype(np.uint8)
+        
+        if distance_obstacles.size > 0 and  distance_navigable.size > 0:
+            val = max(distance_obstacles.max(),distance_navigable.max())
+            Rover.vote[obstacle_y_world, obstacle_x_world, 0] += (val-distance_obstacles)
+            Rover.vote[navigable_y_world, navigable_x_world, 2] += (val+3-distance_navigable)
+            
+            nav_pix = (Rover.vote[:,:,2] > Rover.vote[:,:,0])
+            Rover.worldmap[nav_pix,2] = 255
+            Rover.worldmap[nav_pix,0] = 0
+            Rover.worldmap[~nav_pix,0] = 255
+            Rover.worldmap[rock_y_world, rock_x_world, 1] = 255
+        
     Rover.nav_dists , Rover.nav_angles = to_polar_coords(xpix_mov, y_pix_mov)
+    if xpix_rocks.size > 0 and ypix_rocks.size > 0:    
+        dist, angles = to_polar_coords(xpix_rocks, ypix_rocks)
+        Rover.samples_dists = dist
+        Rover.samples_angles = angles
+        Rover.wrong_rock = 0
+    elif Rover.wrong_rock > 5:
+        Rover.samples_dists = None
+        Rover.samples_angles = None
+    elif Rover.samples_dists is not None and Rover.samples_angles is not None: 
+        Rover.wrong_rock += 1
 
     # clip to avoid overflow
     Rover.worldmap = np.clip(Rover.worldmap, 0, 255)
