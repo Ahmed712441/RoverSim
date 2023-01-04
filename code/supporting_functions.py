@@ -6,10 +6,12 @@ import base64
 import time
 
 
-MASK = cv2.imread("mask2.jpg",cv2.IMREAD_GRAYSCALE) / 255
+MASKDRAWING = cv2.imread("mask2.jpg",cv2.IMREAD_GRAYSCALE) / 255
+MASKMOVING = cv2.imread("mask1.jpg",cv2.IMREAD_GRAYSCALE) / 255
+MASKDRAWING_3D = MASKDRAWING[:, :, np.newaxis]
 DST_SIZE = 5 
 BOTTOM_OFFSET = 6
-HEIGHT ,WIDTH = MASK.shape[0],MASK.shape[1] 
+HEIGHT ,WIDTH = MASKDRAWING.shape[0],MASKDRAWING.shape[1] 
 SOURCE = np.float32([[14, 140], [301 ,140],[200, 96], [118, 96]])
 DEST = np.float32([[WIDTH/2 - DST_SIZE, HEIGHT - BOTTOM_OFFSET],
                   [WIDTH/2 + DST_SIZE, HEIGHT - BOTTOM_OFFSET],

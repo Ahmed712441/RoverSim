@@ -9,3 +9,4 @@ COPY ./code ./code
 RUN pip install markupsafe==2.0.1
 COPY ./code/mask2.jpg .
 COPY ./calibration_images/map_bw.png .
+COPY ./code/mask1.jpg .

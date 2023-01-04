@@ -1,11 +1,11 @@
 import numpy as np
 import cv2
-from supporting_functions import MASK , SOURCE , DEST , SCALE
+from supporting_functions import MASKDRAWING , SOURCE , DEST , SCALE , MASKDRAWING_3D ,MASKMOVING
 
 
 # Identify pixels above the threshold
 # Threshold of RGB > 160 does a nice job of identifying ground pixels only
-def color_thresh(img, rgb_thresh=(160 , 160 , 160)): # (155 , 140 , 127)
+def color_thresh(img, rgb_thresh=(155 , 140 , 127)): # (155 , 140 , 127) (160 , 160 , 160)
     # Create an array of zeros same xy size as img, but single channel
     color_select = np.zeros_like(img[:,:,0])
     # Require that each pixel be above all three threshold values in RGB
@@ -122,14 +122,19 @@ def perception_step(Rover):
         # Rover.nav_angles = rover_centric_angles
     
     wraped = perspect_transform(Rover.img,SOURCE,DEST)
-    threshed = color_thresh(wraped)*MASK
-    obstacles = getobstacles(threshed,MASK)
-    rock_samples = color_rocks(wraped)*MASK
+    # threshed = color_thresh(wraped)
+    drawing_threshed = color_thresh(wraped)*MASKDRAWING 
+    moving_threshed = color_thresh(wraped,(160,160,160))*MASKMOVING
+    obstacles = getobstacles(drawing_threshed,MASKDRAWING)
+    rock_samples = color_rocks(wraped)*MASKDRAWING
     
+    vision_image = (wraped*MASKDRAWING_3D).astype(np.uint8)
     # (160, 320, 3)
-    Rover.vision_image = wraped
+    Rover.vision_image = vision_image #wraped
 
-    xpix_navigable, ypix_navigable = rover_coords(threshed)
+    xpix_mov , y_pix_mov = rover_coords(moving_threshed)
+
+    xpix_navigable, ypix_navigable = rover_coords(drawing_threshed)
     xpix_obstacles, ypix_obstacles = rover_coords(obstacles)
     xpix_rocks, ypix_rocks = rover_coords(rock_samples)
 
@@ -143,17 +148,26 @@ def perception_step(Rover):
                                                 Rover.pos[0], Rover.pos[1], 
                                                 Rover.yaw, Rover.worldmap.shape[0], SCALE)
 
-    Rover.worldmap[obstacle_y_world, obstacle_x_world, 0] += 10
+    distance_obstacles = np.sqrt(np.power(obstacle_x_world-Rover.pos[0] ,2)+np.power(obstacle_y_world-Rover.pos[1] ,2)).astype(np.uint8)
+    distance_navigable = np.sqrt(np.power(navigable_x_world-Rover.pos[0] ,2)+np.power(navigable_y_world-Rover.pos[1] ,2)).astype(np.uint8)
+    Rover.vote[obstacle_y_world, obstacle_x_world, 0] += (80-distance_obstacles)
+    Rover.vote[navigable_y_world, navigable_x_world, 2] += (120-distance_navigable)
+    
+    nav_pix = (Rover.vote[:,:,2] > Rover.vote[:,:,0])
+    Rover.worldmap[nav_pix,2] = 255
+    Rover.worldmap[nav_pix,0] = 0
+    Rover.worldmap[~nav_pix,0] = 255
     Rover.worldmap[rock_y_world, rock_x_world, 1] = 255
-    Rover.worldmap[navigable_y_world, navigable_x_world, 2] += 15
+    # Rover.worldmap[obstacle_y_world, obstacle_x_world, 0] += 10
+    # Rover.worldmap[navigable_y_world, navigable_x_world, 2] += 15
     # remove overlap mesurements
-    nav_pix = Rover.worldmap[:,:,2] > 0
-    Rover.worldmap[nav_pix, 0] = 0
+    # nav_pix = Rover.worldmap[:,:,2] > 0
+    # Rover.worldmap[nav_pix, 0] = 0
     
     # obstacle_pix = Rover.worldmap[:,:,0] > 150
     # Rover.worldmap[obstacle_pix, 2] = 0
 
-    Rover.nav_dists , Rover.nav_angles = to_polar_coords(xpix_navigable, ypix_navigable)
+    Rover.nav_dists , Rover.nav_angles = to_polar_coords(xpix_mov, y_pix_mov)
 
     # clip to avoid overflow
     Rover.worldmap = np.clip(Rover.worldmap, 0, 255)

@@ -9,3 +9,5 @@ services:
       - ./code:/code
     ports:
       - 4567:4567
+    environment:
+      - PYTHONUNBUFFERED=1
