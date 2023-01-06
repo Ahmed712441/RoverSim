@@ -23,7 +23,7 @@ def decision_step(Rover):
         # Check for Rover.mode status. I made Rover.mode a stack
         if Rover.mode[-1] == 'forward':
             # if sample rock on sight (in the left side only) and relatively close
-            if Rover.samples_angles is not None and np.mean(Rover.samples_angles) > -0.2 and np.min(Rover.samples_dists) < 40:
+            if Rover.samples_angles is not None and np.mean(Rover.samples_angles) > -0.2 and np.min(Rover.samples_dists) < 80:
                 # Rover.steer = np.clip(np.mean(Rover.samples_angles * 180 / np.pi), -15, 15)
                 Rover.rock_time = Rover.total_time
                 Rover.mode.append('rock')
@@ -91,15 +91,18 @@ def decision_step(Rover):
             else:
                 mean = np.mean(Rover.samples_angles * 180 / np.pi)
                 if not np.isnan(mean):
-                    Rover.steer = mean #np.clip(mean, -15, 15)
+                    Rover.steer = np.clip(mean, -15, 15) # mean #
+                # if 20 sec passed gives up and goes back to previous mode
+                elif Rover.total_time - Rover.rock_time > 20:
+                    Rover.mode.pop()  # returns to previous mode
                 else:
                     Rover.mode.pop() # no rock in sight anymore. Go back to previous state
-                    print('exited')
-                # if 10 sec passed gives up and goes back to previous mode
-                if Rover.total_time - Rover.rock_time > 10:
-                    Rover.mode.pop()  # returns to previous mode
-                    Rover.samples_angles = None
-                    Rover.samples_dists = None
+                    # print('exited')
+                                    
+                
+                
+                    # Rover.samples_angles = None
+                    # Rover.samples_dists = None
 
                 # if close to the sample stop
                 if Rover.near_sample:
@@ -120,7 +123,7 @@ def decision_step(Rover):
                     # Approach slowly
                     slow_speed = Rover.max_vel / 2
                     if Rover.vel < slow_speed:
-                        Rover.throttle = 0.5
+                        Rover.throttle = 0.2
                         Rover.brake = 0
                     else:  # Else break
                         Rover.throttle = 0
@@ -166,5 +169,5 @@ def decision_step(Rover):
     if Rover.near_sample and Rover.vel == 0 and not Rover.picking_up:
         Rover.send_pickup = True
 
-    # print(Rover.mode[-1])
+    # print(Rover.mode)
     return Rover

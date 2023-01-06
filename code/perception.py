@@ -126,7 +126,7 @@ def perception_step(Rover):
     drawing_threshed = color_thresh(wraped)*MASKDRAWING 
     moving_threshed = color_thresh(wraped,(160,160,160))*MASKMOVING
     obstacles = getobstacles(drawing_threshed,MASKDRAWING)
-    rock_samples = color_rocks(wraped)*MASKDRAWING
+    rock_samples = color_rocks(wraped)*MASKMOVING
     
     vision_image = (wraped*MASKDRAWING_3D).astype(np.uint8)
     # (160, 320, 3)
@@ -164,16 +164,16 @@ def perception_step(Rover):
             Rover.worldmap[rock_y_world, rock_x_world, 1] = 255
         
     Rover.nav_dists , Rover.nav_angles = to_polar_coords(xpix_mov, y_pix_mov)
-    if xpix_rocks.size > 0 and ypix_rocks.size > 0:    
-        dist, angles = to_polar_coords(xpix_rocks, ypix_rocks)
-        Rover.samples_dists = dist
-        Rover.samples_angles = angles
-        Rover.wrong_rock = 0
-    elif Rover.wrong_rock > 5:
-        Rover.samples_dists = None
-        Rover.samples_angles = None
-    elif Rover.samples_dists is not None and Rover.samples_angles is not None: 
-        Rover.wrong_rock += 1
+    # if xpix_rocks.size > 0 and ypix_rocks.size > 0:    
+    dist, angles = to_polar_coords(xpix_rocks, ypix_rocks)
+    Rover.samples_dists = dist
+    Rover.samples_angles = angles
+        # Rover.wrong_rock = 0
+    # elif Rover.wrong_rock > 5:
+    #     Rover.samples_dists = None
+    #     Rover.samples_angles = None
+    # elif Rover.samples_dists is not None and Rover.samples_angles is not None: 
+    #     Rover.wrong_rock += 1
 
     # clip to avoid overflow
     Rover.worldmap = np.clip(Rover.worldmap, 0, 255)
