@@ -155,12 +155,12 @@ def perception_step(Rover):
         if distance_obstacles.size > 0 and  distance_navigable.size > 0:
             val = max(distance_obstacles.max(),distance_navigable.max())
             Rover.vote[obstacle_y_world, obstacle_x_world, 0] += (val-distance_obstacles)
-            Rover.vote[navigable_y_world, navigable_x_world, 2] += (val+3-distance_navigable)
-            
+            Rover.vote[navigable_y_world, navigable_x_world, 2] += (val+10-distance_navigable) 
             nav_pix = (Rover.vote[:,:,2] > Rover.vote[:,:,0])
             Rover.worldmap[nav_pix,2] = 255
             Rover.worldmap[nav_pix,0] = 0
             Rover.worldmap[~nav_pix,0] = 255
+            Rover.worldmap[~nav_pix,2] = 0
             Rover.worldmap[rock_y_world, rock_x_world, 1] = 255
         
     Rover.nav_dists , Rover.nav_angles = to_polar_coords(xpix_mov, y_pix_mov)
